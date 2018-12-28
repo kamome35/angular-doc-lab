@@ -1,83 +1,77 @@
-const config = browser.params;
-import {User as UserModel} from '../../../server/sqldb';
-import {SignupPage} from './signup.po';
-import {NavbarComponent} from '../../components/navbar/navbar.po';
+'use strict';
+
+var config = browser.params;
+var UserModel = require(config.serverConfig.root + '/server/sqldb').User;
 
 describe('Signup View', function() {
-    let page;
+  var page;
 
-    const loadPage = () => {
-        browser.manage().deleteAllCookies();
-        return browser.get(`${config.baseUrl}/signup`).then(() => {
-            page = new SignupPage();
-        });
-    };
+  var loadPage = function() {
+    browser.manage().deleteAllCookies()
+    let promise = browser.get(config.baseUrl + '/signup');
+    page = require('./signup.po');
+    return promise;
+  };
 
-    const testUser = {
-        name: 'Test',
-        email: 'test@example.com',
-        password: 'test1234',
-        confirmPassword: 'test1234'
-    };
+  var testUser = {
+    name: 'Test',
+    email: 'test@example.com',
+    password: 'test',
+    confirmPassword: 'test'
+  };
 
-    before(() => loadPage());
+  before(function() {
+    return loadPage();
+  });
 
-    after(() => {
-        return UserModel.destroy({ where: {} });
+  after(function() {
+    return UserModel.destroy({ where: {} });
+  });
+
+  it('should include signup form with correct inputs and submit button', function() {
+    expect(page.form.name.getAttribute('type')).to.eventually.equal('text');
+    expect(page.form.name.getAttribute('name')).to.eventually.equal('name');
+    expect(page.form.email.getAttribute('type')).to.eventually.equal('email');
+    expect(page.form.email.getAttribute('name')).to.eventually.equal('email');
+    expect(page.form.password.getAttribute('type')).to.eventually.equal('password');
+    expect(page.form.password.getAttribute('name')).to.eventually.equal('password');
+    expect(page.form.confirmPassword.getAttribute('type')).to.eventually.equal('password');
+    expect(page.form.confirmPassword.getAttribute('name')).to.eventually.equal('confirmPassword');
+    expect(page.form.submit.getAttribute('type')).to.eventually.equal('submit');
+    expect(page.form.submit.getText()).to.eventually.equal('Sign up');
+  });
+
+  describe('with local auth', function() {
+
+    before(function() {
+      return UserModel.destroy({ where: {} });
+    })
+
+    it('should signup a new user, log them in, and redirecting to "/"', function() {
+      page.signup(testUser);
+
+      var navbar = require('../../components/navbar/navbar.po');
+
+      expect(browser.getCurrentUrl()).to.eventually.equal(config.baseUrl + '/');
+      expect(navbar.navbarAccountGreeting.getText()).to.eventually.equal('Hello ' + testUser.name);
     });
 
-    it('should include signup form with correct inputs and submit button', function() {
-        expect(page.form.name.getAttribute('type')).to.eventually.equal('text');
-        expect(page.form.name.getAttribute('name')).to.eventually.equal('name');
-        expect(page.form.email.getAttribute('type')).to.eventually.equal('email');
-        expect(page.form.email.getAttribute('name')).to.eventually.equal('email');
-        expect(page.form.password.getAttribute('type')).to.eventually.equal('password');
-        expect(page.form.password.getAttribute('name')).to.eventually.equal('password');
-        expect(page.form.confirmPassword.getAttribute('type')).to.eventually.equal('password');
-        expect(page.form.confirmPassword.getAttribute('name')).to.eventually.equal('confirmPassword');
-        expect(page.form.submit.getAttribute('type')).to.eventually.equal('submit');
-        expect(page.form.submit.getText()).to.eventually.equal('Sign up');
+    describe('and invalid credentials', function() {
+      before(function() {
+        return loadPage();
+      });
+
+      it('should indicate signup failures', function() {
+        page.signup(testUser);
+
+        expect(browser.getCurrentUrl()).to.eventually.equal(config.baseUrl + '/signup');
+        expect(page.form.email.getAttribute('class')).to.eventually.contain('ng-invalid-mongoose');
+
+        var helpBlock = page.form.element(by.css('.form-group.has-error .help-block.ng-binding'));
+        expect(helpBlock.getText()).to.eventually.equal('The specified email address is already in use.');
+      });
+
     });
 
-    it('should include oauth buttons with correct classes applied', function() {
-        expect(page.form.oauthButtons.facebook.getText()).to.eventually.equal('Connect with Facebook');
-        expect(page.form.oauthButtons.google.getText()).to.eventually.equal('Connect with Google+');
-        expect(page.form.oauthButtons.twitter.getText()).to.eventually.equal('Connect with Twitter');
-    });
-
-    describe('with local auth', function() {
-        before(() => {
-            return UserModel.destroy({ where: {} });
-        });
-
-        it('should signup a new user, log them in, and redirecting to "/"', async function() {
-            await page.signup(testUser);
-
-            browser.ignoreSynchronization = false;
-            await browser.wait(() => browser.getCurrentUrl(), 5000, 'URL didn\'t change after 5s');
-            browser.ignoreSynchronization = true;
-
-            let navbar = new NavbarComponent();
-
-            expect((await browser.getCurrentUrl())).to.equal(`${config.baseUrl}/home`);
-            expect((await navbar.navbarAccountGreeting.getText())).to.equal(`Hello ${testUser.name}`);
-        });
-
-        describe('and invalid credentials', function() {
-            before(() => loadPage());
-
-            it('should indicate signup failures', async function() {
-                await page.signup(testUser);
-
-                browser.ignoreSynchronization = false;
-                await browser.wait(() => browser.getCurrentUrl(), 5000, 'URL didn\'t change after 5s');
-                browser.ignoreSynchronization = true;
-
-                expect((await browser.getCurrentUrl())).to.equal(`${config.baseUrl}/signup`);
-
-                let helpBlock = page.form.element(by.css('.form-group.has-error .help-block:not([hidden])'));
-                expect((await helpBlock.getText())).to.equal('This email address is already in use.');
-            });
-        });
-    });
+  });
 });

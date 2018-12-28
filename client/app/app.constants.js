@@ -1,7 +1,7 @@
+'use strict';
 
-// https://github.com/babel/babel/issues/2877
-import * as shared from '../../server/config/environment/shared';
+import angular from 'angular';
 
-export const env = shared.env;
-export const port = shared.port;
-export const userRoles = shared.userRoles;
+export default angular.module('docManApp.constants', [])
+  .constant('appConfig', require('../../server/config/environment/shared'))
+  .name;

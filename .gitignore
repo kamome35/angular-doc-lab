@@ -4,9 +4,9 @@ public
 .sass-cache
 .idea
 client/bower_components
-client/app.html
+client/index.html
 dist
 /server/config/local.env.js
 npm-debug.log
 coverage
-dev.sqlite
+*.sqlite

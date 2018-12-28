@@ -1,6 +1,5 @@
 $icon-font-path: '/assets/fonts/bootstrap/';
 @import '~bootstrap-sass/assets/stylesheets/bootstrap';
-@import '~bootstrap-social/bootstrap-social.scss';
 $fa-font-path: '/assets/fonts/font-awesome/';
 @import '~font-awesome/scss/font-awesome';
 
@@ -17,15 +16,11 @@ $fa-font-path: '/assets/fonts/font-awesome/';
   padding: 0.2em 0;
 }
 
-
-[hidden] {
-  display: none !important;
-}
-
-.ng-valid[required], .ng-valid.required  {
-  border-left: 5px solid #42A948; /* green */
-}
-
-.ng-invalid:not(form)  {
-  border-left: 5px solid #a94442; /* red */
-}
+// Component styles are injected through gulp
+/* inject:scss */
+@import 'admin/admin';
+@import 'main/main';
+@import 'upload/upload';
+@import '../components/footer/footer';
+@import '../components/modal/modal';
+/* endinject */

@@ -1,0 +1,17 @@
+.file {
+  display: inline-block;
+  overflow: hidden;
+  position: relative;
+  padding: .5em;
+}
+
+.file input[type="file"] {
+  opacity: 0;
+  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin: 0;
+  font-size: 100px;
+  cursor: pointer;
+}

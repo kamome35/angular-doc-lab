@@ -2,8 +2,10 @@
  * User model events
  */
 
-import { EventEmitter } from 'events';
-import { User } from '../../sqldb';
+'use strict';
+
+import {EventEmitter} from 'events';
+import {User} from '../../sqldb';
 var UserEvents = new EventEmitter();
 
 // Set max event listeners (0 == unlimited)
@@ -11,25 +13,25 @@ UserEvents.setMaxListeners(0);
 
 // Model events
 var events = {
-    afterCreate: 'save',
-    afterUpdate: 'save',
-    afterDestroy: 'remove'
+  afterCreate: 'save',
+  afterUpdate: 'save',
+  afterDestroy: 'remove'
 };
 
 // Register the event emitter to the model events
 function registerEvents(user) {
-    for(var e in events) {
-        let event = events[e];
-        user.hook(e, emitEvent(event));
-    }
+  for(var e in events) {
+    let event = events[e];
+    user.hook(e, emitEvent(event));
+  }
 }
 
 function emitEvent(event) {
-    return function(doc, options, done) {
-        UserEvents.emit(`${event}:${doc._id}`, doc);
-        UserEvents.emit(event, doc);
-        done(null);
-    };
+  return function(doc, options, done) {
+    UserEvents.emit(`${event}:${doc.id}`, doc);
+    UserEvents.emit(event, doc);
+    done(null);
+  };
 }
 
 registerEvents(User);

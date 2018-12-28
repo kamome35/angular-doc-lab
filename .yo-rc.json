@@ -1,6 +1,6 @@
 {
   "generator-angular-fullstack": {
-    "generatorVersion": "5.0.0-rc.4",
+    "generatorVersion": "4.2.2",
     "endpointDirectory": "server/api/",
     "insertRoutes": true,
     "registerRoutesFile": "server/routes.js",
@@ -8,7 +8,7 @@
     "routesBase": "/api/",
     "pluralizeRoutes": true,
     "insertSockets": true,
-    "registerSocketsFile": "server/config/websockets.js",
+    "registerSocketsFile": "server/config/socketio.js",
     "socketsNeedle": "// Insert sockets below",
     "insertModels": true,
     "registerModelsFile": "server/sqldb/index.js",
@@ -16,29 +16,23 @@
     "filters": {
       "js": true,
       "babel": true,
-      "flow": true,
+      "flow": false,
       "html": true,
       "sass": true,
-      "ngroute": true,
+      "uirouter": true,
       "bootstrap": true,
       "uibootstrap": true,
-      "ws": true,
       "auth": true,
       "models": true,
       "sequelizeModels": true,
       "sequelize": true,
-      "oauth": true,
-      "googleAuth": true,
-      "facebookAuth": true,
-      "twitterAuth": true,
       "mocha": true,
       "jasmine": false,
       "should": false,
       "expect": true
     }
   },
-  "generator-angular-fullstack-component": {
-    "appModulePath": "client/app/app.module.js",
+  "generator-ng-component": {
     "routeDirectory": "client/app/",
     "directiveDirectory": "client/app/",
     "componentDirectory": "client/app/components/",
@@ -48,8 +42,12 @@
     "moduleName": "",
     "modulePrompt": true,
     "filters": [
+      "uirouter",
       "mocha",
-      "expect"
+      "expect",
+      "uirouter",
+      "es6",
+      "webpack"
     ],
     "extensions": [
       "babel",

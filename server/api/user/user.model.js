@@ -1,218 +1,217 @@
+'use strict';
+
 import crypto from 'crypto';
-var authTypes = ['github', 'twitter', 'facebook', 'google'];
 
 var validatePresenceOf = function(value) {
-    return value && value.length;
+  return value && value.length;
 };
 
 export default function(sequelize, DataTypes) {
-    const User = sequelize.define(
-        'User',
-        {
-            _id: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                primaryKey: true,
-                autoIncrement: true
-            },
-            name: DataTypes.STRING,
-            email: {
-                type: DataTypes.STRING,
-                unique: {
-                    msg: 'The specified email address is already in use.'
-                },
-                validate: {
-                    isEmail: true
-                }
-            },
-            role: {
-                type: DataTypes.STRING,
-                defaultValue: 'user'
-            },
-            password: {
-                type: DataTypes.STRING,
-                validate: {
-                    notEmpty: true
-                }
-            },
-            provider: DataTypes.STRING,
-            salt: DataTypes.STRING,
-            facebook: DataTypes.JSON,
-            twitter: DataTypes.JSON,
-            google: DataTypes.JSON,
-            github: DataTypes.JSON
-        },
-        {
-            /**
-             * Virtual Getters
-             */
-            getterMethods: {
-                // Public profile information
-                profile() {
-                    return {
-                        name: this.name,
-                        role: this.role
-                    };
-                },
+  var User = sequelize.define('user', {
 
-                // Non-sensitive info we'll be putting in the token
-                token() {
-                    return {
-                        _id: this._id,
-                        role: this.role
-                    };
-                }
-            },
+    name: DataTypes.STRING,
+    email: {
+      type: DataTypes.STRING,
+      unique: {
+        msg: 'The specified email address is already in use.'
+      },
+      validate: {
+        isEmail: true
+      }
+    },
+    role: {
+      type: DataTypes.STRING,
+      defaultValue: 'user'
+    },
+    password: {
+      type: DataTypes.STRING,
+      validate: {
+        notEmpty: true
+      }
+    },
+    provider: DataTypes.STRING,
+    salt: DataTypes.STRING
 
-            /**
-             * Pre-save hooks
-             */
-            hooks: {
-                beforeBulkCreate(users) {
-                    var promises = [];
-                    users.forEach(user => promises.push(user.updatePassword()));
-                    return Promise.all(promises);
-                },
-                beforeCreate(user) {
-                    return user.updatePassword();
-                },
-                beforeUpdate(user) {
-                    if(user.changed('password')) {
-                        return user.updatePassword();
-                    }
-                    return Promise.resolve(user);
-                }
+  }, {
+
+    /**
+     * Virtual Getters
+     */
+    getterMethods: {
+      // Public profile information
+      profile() {
+        return {
+          name: this.name,
+          role: this.role
+        };
+      },
+
+      // Non-sensitive info we'll be putting in the token
+      token() {
+        return {
+          role: this.role
+        };
+      }
+    },
+
+    /**
+     * Pre-save hooks
+     */
+    hooks: {
+      beforeBulkCreate(users, fields, fn) {
+        var totalUpdated = 0;
+        users.forEach(user => {
+          user.updatePassword(err => {
+            if(err) {
+              return fn(err);
             }
+            totalUpdated += 1;
+            if(totalUpdated === users.length) {
+              return fn();
+            }
+          });
+        });
+      },
+      beforeCreate(user, fields, fn) {
+        user.updatePassword(fn);
+      },
+      beforeUpdate(user, fields, fn) {
+        if(user.changed('password')) {
+          return user.updatePassword(fn);
         }
-    );
+        fn();
+      }
+    },
 
     /**
      * Instance Methods
      */
-
-    /**
-     * Authenticate - check if the passwords are the same
-     *
-     * @param {String} password
-     * @param {Function} callback
-     * @return {Boolean}
-     * @api public
-     */
-    User.prototype.authenticate = function(password, callback) {
+    instanceMethods: {
+      /**
+       * Authenticate - check if the passwords are the same
+       *
+       * @param {String} password
+       * @param {Function} callback
+       * @return {Boolean}
+       * @api public
+       */
+      authenticate(password, callback) {
         if(!callback) {
-            return this.password === this.encryptPassword(password);
+          return this.password === this.encryptPassword(password);
         }
 
         var that = this;
         this.encryptPassword(password, function(err, pwdGen) {
-            if(err) {
-                return callback(err);
-            }
+          if(err) {
+            return callback(err);
+          }
 
-            if(that.password === pwdGen) {
-                return callback(null, true);
-            } else {
-                return callback(null, false);
-            }
+          if(that.password === pwdGen) {
+            return callback(null, true);
+          } else {
+            return callback(null, false);
+          }
         });
-    };
+      },
 
-    /**
-     * Make salt
-     *
-     * @param {Number} [byteSize] - Optional salt byte size, default to 16
-     * @param {Function} callback
-     * @return {String}
-     * @api public
-     */
-    User.prototype.makeSalt = function(...args) {
+      /**
+       * Make salt
+       *
+       * @param {Number} [byteSize] - Optional salt byte size, default to 16
+       * @param {Function} callback
+       * @return {String}
+       * @api public
+       */
+      makeSalt(...args) {
         let byteSize;
         let callback;
         let defaultByteSize = 16;
 
         if(typeof args[0] === 'function') {
-            callback = args[0];
-            byteSize = defaultByteSize;
+          callback = args[0];
+          byteSize = defaultByteSize;
         } else if(typeof args[1] === 'function') {
-            callback = args[1];
+          callback = args[1];
         } else {
-            throw new Error('Missing Callback');
+          throw new Error('Missing Callback');
         }
 
         if(!byteSize) {
-            byteSize = defaultByteSize;
+          byteSize = defaultByteSize;
         }
 
         return crypto.randomBytes(byteSize, function(err, salt) {
-            if(err) {
-                return callback(err);
-            }
-            return callback(null, salt.toString('base64'));
+          if(err) {
+            return callback(err);
+          }
+          return callback(null, salt.toString('base64'));
         });
-    };
+      },
 
-    /**
-     * Encrypt password
-     *
-     * @param {String} password
-     * @param {Function} callback
-     * @return {String}
-     * @api public
-     */
-    User.prototype.encryptPassword = function(password, callback) {
+      /**
+       * Encrypt password
+       *
+       * @param {String} password
+       * @param {Function} callback
+       * @return {String}
+       * @api public
+       */
+      encryptPassword(password, callback) {
         if(!password || !this.salt) {
-            return callback ? callback(null) : null;
+          return callback ? callback(null) : null;
         }
 
         var defaultIterations = 10000;
         var defaultKeyLength = 64;
-        var salt = Buffer.from(this.salt, 'base64');
+        var salt = new Buffer(this.salt, 'base64');
 
         if(!callback) {
-            return crypto.pbkdf2Sync(password, salt, defaultIterations, defaultKeyLength, 'sha256').toString('base64');
+          // eslint-disable-next-line no-sync
+          return crypto.pbkdf2Sync(password, salt, defaultIterations, defaultKeyLength)
+                       .toString('base64');
         }
 
-        return crypto.pbkdf2(password, salt, defaultIterations, defaultKeyLength, 'sha256', function(err, key) {
+        return crypto.pbkdf2(password, salt, defaultIterations, defaultKeyLength,
+          function(err, key) {
             if(err) {
-                return callback(err);
+              return callback(err);
             }
             return callback(null, key.toString('base64'));
-        });
-    };
+          });
+      },
 
-    /**
-     * Update password field
-     *
-     * @param {Function} fn
-     * @return {String}
-     * @api public
-     */
-    User.prototype.updatePassword = function() {
-        return new Promise((resolve, reject) => {
-            if(!this.password) {
-                return resolve(User);
+      /**
+       * Update password field
+       *
+       * @param {Function} fn
+       * @return {String}
+       * @api public
+       */
+      updatePassword(fn) {
+        // Handle new/update passwords
+        if(!this.password) return fn(null);
+
+        if(!validatePresenceOf(this.password)) {
+          fn(new Error('Invalid password'));
+        }
+
+        // Make salt with a callback
+        this.makeSalt((saltErr, salt) => {
+          if(saltErr) {
+            return fn(saltErr);
+          }
+          this.salt = salt;
+          this.encryptPassword(this.password, (encryptErr, hashedPassword) => {
+            if(encryptErr) {
+              fn(encryptErr);
             }
-
-            if(!validatePresenceOf(this.password) && authTypes.indexOf(this.provider) === -1) {
-                return reject(new Error('Invalid password'));
-            }
-
-            // Make salt with a callback
-            return this.makeSalt((saltErr, salt) => {
-                if(saltErr) {
-                    return reject(saltErr);
-                }
-                this.salt = salt;
-                return this.encryptPassword(this.password, (encryptErr, hashedPassword) => {
-                    if(encryptErr) {
-                        return reject(encryptErr);
-                    }
-                    this.password = hashedPassword;
-                    return resolve(this);
-                });
-            });
+            this.password = hashedPassword;
+            fn(null);
+          });
         });
-    };
+      }
+    }
+  });
 
-    return User;
+  return User;
 }

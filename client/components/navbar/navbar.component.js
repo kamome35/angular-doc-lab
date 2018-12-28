@@ -1,54 +1,29 @@
-import { Component } from '@angular/core';
+'use strict';
+/* eslint no-sync: 0 */
 
-import { Router } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
+import angular from 'angular';
 
-@Component({
-    selector: 'navbar',
-    template: require('./navbar.html'),
-})
 export class NavbarComponent {
-    isCollapsed = true;
-    menu = [{
-        title: 'Home',
-        link: '/home',
-    }];
-    Router;
-    isAdmin;
-    isLoggedIn;
-    currentUser = {};
-    AuthService;
+  menu = [/*{
+    title: '',
+    state: 'main'
+  }*/];
 
-    static parameters = [AuthService, Router];
-    constructor(authService: AuthService, router: Router) {
-        this.AuthService = authService;
+  isCollapsed = true;
 
-        this.Router = router;
+  constructor(Auth) {
+    'ngInject';
 
-        this.reset();
+    this.isLoggedIn = Auth.isLoggedInSync;
+    this.isAdmin = Auth.isAdminSync;
+    this.getCurrentUser = Auth.getCurrentUserSync;
+  }
 
-        this.AuthService.currentUserChanged.subscribe(user => {
-            this.currentUser = user;
-            this.reset();
-        });
-    }
-
-    reset() {
-        this.AuthService.isLoggedIn().then(is => {
-            this.isLoggedIn = is;
-        });
-        this.AuthService.isAdmin().then(is => {
-            this.isAdmin = is;
-        });
-        this.AuthService.getCurrentUser().then(user => {
-            this.currentUser = user;
-        });
-    }
-
-    logout() {
-        return this.AuthService.logout().then(() => {
-            this.Router.navigateByUrl('/home');
-            this.reset();
-        });
-    }
 }
+
+export default angular.module('directives.navbar', [])
+  .component('navbar', {
+    template: require('./navbar.html'),
+    controller: NavbarComponent
+  })
+  .name;

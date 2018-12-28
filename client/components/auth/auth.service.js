@@ -1,139 +1,115 @@
-import { Injectable, EventEmitter, Output } from '@angular/core';
-import { UserService } from './user.service';
-import { HttpClient } from '@angular/common/http';
-import { safeCb } from '../util';
-import { userRoles } from '../../app/app.constants';
+'use strict';
 
-// @flow
-class User {
-    _id = '';
-    name = '';
-    email = '';
-    role = '';
+import * as _ from 'lodash';
+
+
+class _User {
+  id = '';
+  name = '';
+  email = '';
+  role = '';
+  $promise = undefined;
 }
 
-@Injectable()
-export class AuthService {
-    _currentUser: User = new User();
-    @Output() currentUserChanged = new EventEmitter(true);
-    userRoles = userRoles || [];
-    UserService;
+export function AuthService($location, $http, $cookies, $q, appConfig, Util, User) {
+  'ngInject';
 
-    static parameters = [HttpClient, UserService];
-    constructor(http: HttpClient, userService: UserService) {
-        this.http = http;
-        this.UserService = userService;
+  var safeCb = Util.safeCb;
+  var currentUser = new _User();
+  var userRoles = appConfig.userRoles || [];
+  /**
+   * Check if userRole is >= role
+   * @param {String} userRole - role of current user
+   * @param {String} role - role to check against
+   */
+  var hasRole = function(userRole, role) {
+    return userRoles.indexOf(userRole) >= userRoles.indexOf(role);
+  };
 
-        if(localStorage.getItem('id_token')) {
-            this.UserService.get().toPromise()
-                .then((user: User) => {
-                    this.currentUser = user;
-                })
-                .catch(err => {
-                    console.log(err);
+  if($cookies.get('token') && $location.path() !== '/logout') {
+    currentUser = User.get();
+  }
 
-                    localStorage.removeItem('id_token');
-                });
-        }
-    }
-
-    /**
-     * Check if userRole is >= role
-     * @param {String} userRole - role of current user
-     * @param {String} role - role to check against
-     */
-    static hasRole(userRole, role) {
-        return userRoles.indexOf(userRole) >= userRoles.indexOf(role);
-    }
-
-    get currentUser() {
-        return this._currentUser;
-    }
-
-    set currentUser(user) {
-        this._currentUser = user;
-        this.currentUserChanged.emit(user);
-    }
-
+  var Auth = {
     /**
      * Authenticate user and save token
      *
      * @param  {Object}   user     - login info
-     * @param  {Function} [callback] - function(error, user)
+     * @param  {Function} callback - function(error, user)
      * @return {Promise}
      */
-    login({email, password}, callback) {
-        return this.http.post('/auth/local', {
-            email,
-            password
+    login({
+      email,
+      password
+    }, callback) {
+      return $http.post('/auth/local', {
+        email,
+        password
+      })
+        .then(res => {
+          $cookies.put('token', res.data.token);
+          currentUser = User.get();
+          return currentUser.$promise;
         })
-            .toPromise()
-            .then((res: {token: string}) => {
-                localStorage.setItem('id_token', res.token);
-                return this.UserService.get().toPromise();
-            })
-            .then((user: User) => {
-                this.currentUser = user;
-                localStorage.setItem('user', JSON.stringify(user));
-                safeCb(callback)(null, user);
-                return user;
-            })
-            .catch(err => {
-                this.logout();
-                safeCb(callback)(err);
-                return Promise.reject(err);
-            });
-    }
+        .then(user => {
+          safeCb(callback)(null, user);
+          return user;
+        })
+        .catch(err => {
+          Auth.logout();
+          safeCb(callback)(err.data);
+          return $q.reject(err.data);
+        });
+    },
 
     /**
      * Delete access token and user info
-     * @return {Promise}
      */
     logout() {
-        localStorage.removeItem('user');
-        localStorage.removeItem('id_token');
-        this.currentUser = new User();
-        return Promise.resolve();
-    }
+      $cookies.remove('token');
+      currentUser = new _User();
+    },
 
     /**
      * Create a new user
      *
      * @param  {Object}   user     - user info
-     * @param  {Function} callback - optional, function(error, user)
+     * @param  {Function} callback - function(error, user)
      * @return {Promise}
      */
     createUser(user, callback) {
-        return this.UserService.create(user).toPromise()
-            .then(data => {
-                localStorage.setItem('id_token', data.token);
-                return this.UserService.get().toPromise();
-            })
-            .then((_user: User) => {
-                this.currentUser = _user;
-                return safeCb(callback)(null, _user);
-            })
-            .catch(err => {
-                this.logout();
-                safeCb(callback)(err);
-                return Promise.reject(err);
-            });
-    }
+      return User.save(user, function(data) {
+        $cookies.put('token', data.token);
+        currentUser = User.get();
+        return safeCb(callback)(null, user);
+      }, function(err) {
+        Auth.logout();
+        return safeCb(callback)(err);
+      })
+        .$promise;
+    },
 
     /**
      * Change password
      *
      * @param  {String}   oldPassword
      * @param  {String}   newPassword
-     * @param  {Function} [callback] - function(error, user)
+     * @param  {Function} callback    - function(error, user)
      * @return {Promise}
      */
     changePassword(oldPassword, newPassword, callback) {
-        return this.UserService.changePassword({id: this.currentUser._id}, oldPassword, newPassword)
-            .toPromise()
-            .then(() => safeCb(callback)(null))
-            .catch(err => safeCb(callback)(err));
-    }
+      return User.changePassword({
+        id: currentUser.id
+      }, {
+        oldPassword,
+        newPassword
+      }, function() {
+        return safeCb(callback)(null);
+      }, function(err) {
+        return safeCb(callback)(err);
+      })
+        .$promise;
+    },
 
     /**
      * Gets all available info on a user
@@ -142,9 +118,17 @@ export class AuthService {
      * @return {Promise}
      */
     getCurrentUser(callback) {
-        safeCb(callback)(this.currentUser);
-        return Promise.resolve(this.currentUser);
-    }
+      var value = _.get(currentUser, '$promise') ? currentUser.$promise : currentUser;
+
+      return $q.when(value)
+        .then(user => {
+          safeCb(callback)(user);
+          return user;
+        }, () => {
+          safeCb(callback)({});
+          return {};
+        });
+    },
 
     /**
      * Gets all available info on a user
@@ -152,45 +136,81 @@ export class AuthService {
      * @return {Object}
      */
     getCurrentUserSync() {
-        return this.currentUser;
-    }
+      return currentUser;
+    },
 
     /**
-     * Checks if user is logged in
-     * @param {function} [callback]
-     * @returns {Promise}
+     * Check if a user is logged in
+     *
+     * @param  {Function} [callback] - function(is)
+     * @return {Promise}
      */
     isLoggedIn(callback) {
-        let is = !!this.currentUser._id;
-        safeCb(callback)(is);
-        return Promise.resolve(is);
-    }
+      return Auth.getCurrentUser(undefined)
+        .then(user => {
+          let is = _.get(user, 'role');
+
+          safeCb(callback)(is);
+          return is;
+        });
+    },
 
     /**
-     * Checks if user is logged in
-     * @returns {Boolean}
+     * Check if a user is logged in
+     *
+     * @return {Bool}
      */
     isLoggedInSync() {
-        return !!this.currentUser._id;
-    }
+      return !!_.get(currentUser, 'role');
+    },
+
+    /**
+     * Check if a user has a specified role or higher
+     *
+     * @param  {String}     role     - the role to check against
+     * @param  {Function} [callback] - function(has)
+     * @return {Promise}
+     */
+    hasRole(role, callback) {
+      return Auth.getCurrentUser(undefined)
+        .then(user => {
+          let has = hasRole(_.get(user, 'role'), role);
+
+          safeCb(callback)(has);
+          return has;
+        });
+    },
+
+    /**
+     * Check if a user has a specified role or higher
+     *
+     * @param  {String} role - the role to check against
+     * @return {Bool}
+     */
+    hasRoleSync(role) {
+      return hasRole(_.get(currentUser, 'role'), role);
+    },
+
+    /**
+     * Check if a user is an admin
+     *   (synchronous|asynchronous)
+     *
+     * @param  {Function|*} callback - optional, function(is)
+     * @return {Bool|Promise}
+     */
+    isAdmin(...args) {
+      return Auth.hasRole(Reflect.apply([].concat, ['admin'], args));
+    },
 
     /**
      * Check if a user is an admin
      *
-     * @param  {Function|*} [callback] - optional, function(is)
-     * @return {Promise}
+     * @return {Bool}
      */
-    isAdmin(callback) {
-        return this.getCurrentUser().then(user => {
-            var is = user.role === 'admin';
-            safeCb(callback)(is);
-            return is;
-        });
-    }
-
     isAdminSync() {
-        return this.currentUser.role === 'admin';
-    }
+      // eslint-disable-next-line no-sync
+      return Auth.hasRoleSync('admin');
+    },
 
     /**
      * Get auth token
@@ -198,6 +218,9 @@ export class AuthService {
      * @return {String} - a token string used for authenticating
      */
     getToken() {
-        return localStorage.getItem('id_token');
+      return $cookies.get('token');
     }
+  };
+
+  return Auth;
 }
