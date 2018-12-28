@@ -1,8 +1,21 @@
 # angular-doc-lab
 
+## Demo
+
+## Description
+
 This project was generated with the [Angular Full-Stack Generator](https://github.com/DaftMonk/generator-angular-fullstack) version 4.2.2.
 
 ## Getting Started
+
+- Upload
+  ![video8](https://user-images.githubusercontent.com/42742556/50519608-25492680-0aff-11e9-90b3-840c4e1c4b6a.gif)
+
+- Create Folder
+  ![video10](https://user-images.githubusercontent.com/42742556/50519614-28441700-0aff-11e9-8ee6-7a8d7fe5dfb8.gif)
+
+- Tree
+  ![video9](https://user-images.githubusercontent.com/42742556/50519613-28441700-0aff-11e9-885f-dc1a86b6d447.gif)
 
 ### Prerequisites
 
