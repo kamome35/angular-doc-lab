@@ -1,35 +1,39 @@
 /**
  * Using Rails-like standard naming convention for endpoints.
- * GET     /api/docs              ->  index
- * POST    /api/docs              ->  create
- * GET     /api/docs/:id          ->  show
- * PUT     /api/docs/:id          ->  upsert
- * PATCH   /api/docs/:id          ->  patch
- * DELETE  /api/docs/:id          ->  destroy
+ * GET     /api/doc              ->  index
+ * POST    /api/doc              ->  create
+ * GET     /api/doc/:id          ->  show
+ * PUT     /api/doc/:id          ->  upsert
+ * PATCH   /api/doc/:id          ->  patch
+ * DELETE  /api/doc/:id          ->  destroy
  */
 
 'use strict';
 
-const jsonpatch = require('fast-json-patch');
-const {Doc, User} = require('../../sqldb');
+import jsonpatch from 'fast-json-patch';
+import {Doc} from '../../sqldb';
+const svn = require('node-svn-ultimate').commands;
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
   return function(entity) {
     if(entity) {
-      return res.status(statusCode).json([].concat(entity));
+      return res.status(statusCode).json(entity);
     }
     return null;
   };
 }
 
-function respondImage(res) {
+function patchUpdates(patches) {
   return function(entity) {
-    if(entity) {
-      res.setContentType("application/force-download");
-      return res.end(new Buffer(entity.data));
+    try {
+      // eslint-disable-next-line prefer-reflect
+      jsonpatch.apply(entity, patches, /*validate*/ true);
+    } catch(err) {
+      return Promise.reject(err);
     }
-    return null;
+
+    return entity.save();
   };
 }
 
@@ -57,69 +61,21 @@ function handleEntityNotFound(res) {
 function handleError(res, statusCode) {
   statusCode = statusCode || 500;
   return function(err) {
-    return res.status(statusCode).send(err);
+    res.status(statusCode).send(err);
   };
 }
 
 // Gets a single Doc from the DB
-export function download(req, res) {
-  return Doc.findOne({
-    where: {
-      kind: 'file',
-      parent: '/' + (req.params.parent || ''),
-      name: '/' + req.params.name,
-    }
-  })
-    .then(handleEntityNotFound(res))
-    .then(respondImage(res))
-    .catch(handleError(res));
-}
-
 export function show(req, res) {
-  return Doc.findAll({
-    where: {
-      parent: '/' + (req.params.parent || '')
-    },
-    include: [{
-      model: User,
-      attributes: ['id','name']
-    }]
-  })
-    .then(handleEntityNotFound(res))
-    .then(respondWithResult(res))
-    .catch(handleError(res));
+  svn.info(req.params.path, {cwd: './doc'}, function(err, data) {
+    if(err) return res.status(404).end();
+    svn.list(data.entry.url, function(err, data) {
+      if(err) return res.status(404).end();
+      if (data.list.entry !== undefined)
+        return res.json([].concat(data.list.entry));
+      else
+        return res.json([]);
+    });
+  });
 }
 
-// Creates a new Doc in the DB
-export function create(req, res) {
-  return Doc.create(req.body)
-    .then(respondWithResult(res, 201))
-    .catch(handleError(res));
-}
-
-// Upserts the given Doc in the DB at the specified ID
-export function upsert(req, res) {
-  if(req.body.id) {
-    Reflect.deleteProperty(req.body, 'id');
-  }
-
-  return Doc.upsert(req.body, {
-    where: {
-      id: req.params.id
-    }
-  })
-    .then(respondWithResult(res))
-    .catch(handleError(res));
-}
-
-// Deletes a Doc from the DB
-export function destroy(req, res) {
-  return Doc.find({
-    where: {
-      id: req.params.id
-    }
-  })
-    .then(handleEntityNotFound(res))
-    .then(removeEntity(res))
-    .catch(handleError(res));
-}

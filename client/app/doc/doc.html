@@ -1,0 +1,60 @@
+<div class="container">
+	<div uib-alert ng-repeat="alert in alerts" ng-class="'alert-' + alert.type" close="alerts.splice($index, 1)">
+		{{alert.msg}}
+	</div>
+	<p class="pull-right">
+		<button popover-placement="bottom-right" popover-trigger="'outsideClick'" uib-popover-template="'folderCreate.html'" popover-is-open="folder.isOpen" type="button"
+		class="btn btn-default"><i class="fa fa-cog" aria-hidden="true"></i> 操作</button>
+		<script type="text/ng-template" id="folderCreate.html">
+			<form name="folderCreate" ng-submit="$ctrl.onCreateFolder(folder)" novalidate>
+				<div class="form-group">
+					<label>フォルダ作成:</label>
+					<p><span class="label label-primary" uib-tooltip="フォルダ作成先"><span class="glyphicon glyphicon-folder-open"></span> {{$ctrl.path.join($ctrl.$location.path(),'/')}}{{folder.name}}</span></p>
+					<input type="text" name="name" class="form-control" ng-model="folder.name" ng-pattern="/^[^\/]+$/" placeholder="フォルダ名" required>
+					<span class="error" ng-show="folderCreate.name.$error.required">フォルダ名は必須です。</span>
+					<span class="error" ng-show="folderCreate.name.$error.pattern">使用不可能な文字を含んでいます。</span>
+				</div>
+				<div class="form-group pull-right">
+					<input type="submit" class="btn btn-primary" ng-disabled="folderCreate.$invalid" value="作成" />
+				</div>
+			</form>
+		</script>
+	</p>
+	<p><span class="label label-primary"><span class="glyphicon glyphicon-folder-open"></span> {{$ctrl.path.join($ctrl.$location.path(),'/')}}</span></p>
+	<div>
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th class="icon"></th>
+					<th class="name">ファイル名</th>
+					<th class="size">サイズ</th>
+					<th class="date">更新日</th>
+					<th class="ctrl"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-show="$ctrl.parentPath">
+					<td></td>
+					<td><a href="{{$ctrl.path.join($ctrl.$location.path(),'..')}}/" title="上のフォルダへ移動">..</a></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr ng-repeat="item in $ctrl.list | orderBy: '$.kind'">
+					<td class="icon">
+						<span ng-show="$ctrl.isFile(item)"><i class="fa fa-file-text-o"></i></span>
+						<span ng-hide="$ctrl.isFile(item)"><i class="glyphicon glyphicon-folder-close"></i></span>
+					</td>
+					<td class="name"><a href="{{$ctrl.path.join('/doc',$ctrl.parentPath,item.name)}}">{{item.name}}</a></td>
+					<td class="size"><span ng-show="$ctrl.isFile(item)">{{item.size | bytes}}</span></td>
+					<td class="date"><a href="{{$ctrl.path.join('/history',$ctrl.parentPath,item.name)}}">{{item.commit.date | date : 'yyyy/MM/dd HH:mm'}}</a></td>
+					<td class="ctrl">
+						<button popover-placement="bottom-right" popover-trigger="'outsideClick'" title="操作" uib-popover-html="'<button type=\'button\' class=\'btn btn-danger btn-s\' ng-click=\'uploader.clearQueue()\' ng-disabled=\'!uploader.queue.length\'><span class=\'glyphicon glyphicon-trash\'></span> 削除</button>'"
+						 type="button" class="btn btn-default btn-xs"><i class="fa fa-cog" aria-hidden="true"></i></button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+<upload id="upload"></upload>

@@ -18,7 +18,7 @@ export class UploadComponent {
   
 }
 
-export default angular.module('docManApp.upload', [uiRouter])
+export default angular.module('docSysApp.upload', [uiRouter])
   .config(routes)
   .component('upload', {
     template: require('./upload.html'),

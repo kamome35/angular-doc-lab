@@ -4,20 +4,11 @@
 import angular from 'angular';
 
 export class NavbarComponent {
-  menu = [/*{
-    title: '',
-    state: 'main'
-  }*/];
-
+  menu = [{
+    title: 'ドキュメント',
+    state: 'doc'
+  }];
   isCollapsed = true;
-
-  constructor(Auth) {
-    'ngInject';
-
-    this.isLoggedIn = Auth.isLoggedInSync;
-    this.isAdmin = Auth.isAdminSync;
-    this.getCurrentUser = Auth.getCurrentUserSync;
-  }
 
 }
 

@@ -7,7 +7,7 @@
 
 module.exports = {
   DOMAIN: 'http://localhost:9000',
-  SESSION_SECRET: 'docman-secret',
+  SESSION_SECRET: 'docsys-secret',
 
   // Control debug level for modules using visionmedia/debug
   DEBUG: ''

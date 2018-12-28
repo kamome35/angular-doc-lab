@@ -7,20 +7,13 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a href="/docs/" class="navbar-brand">ドキュメント管理</a>
+      <a class="navbar-brand">ドキュメント管理</a>
     </div>
     <div uib-collapse="$ctrl.isCollapsed" class="navbar-collapse collapse" id="navbar-main">
       <ul class="nav navbar-nav">
         <li ng-repeat="item in $ctrl.menu" ui-sref-active="active">
             <a ui-sref="{{item.state}}">{{item.title}}</a>
         </li>
-        <li ng-show="$ctrl.isAdmin()" ui-sref-active="active"><a ui-sref="admin">ユーザ管理</a></li>
-      </ul>
-
-      <ul class="nav navbar-nav navbar-right">
-        <li ng-hide="$ctrl.isLoggedIn()" ui-sref-active="active"><a ui-sref="login">ログイン</a></li>
-        <li ng-show="$ctrl.isLoggedIn()" ui-sref-active="active"><p class="navbar-text"><a ui-sref="settings">{{ $ctrl.getCurrentUser().name }}</a> さん</p></li>
-        <li ng-show="$ctrl.isLoggedIn()"><a ui-sref="logout">ログアウト</a></li>
       </ul>
     </div>
   </div>

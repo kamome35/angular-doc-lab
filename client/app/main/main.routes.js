@@ -4,7 +4,7 @@ export default function routes($stateProvider) {
   'ngInject';
 
   $stateProvider.state('main', {
-    url: '/docs/{parent:.*}',
+    url: '/',
     template: '<main></main>'
   });
 }

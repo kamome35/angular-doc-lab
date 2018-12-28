@@ -1,7 +1,7 @@
 'use strict';
 
 export default function(sequelize, DataTypes) {
-  return sequelize.define('Doc', {
+  return sequelize.define('Upload', {
     _id: {
       type: DataTypes.INTEGER,
       allowNull: false,

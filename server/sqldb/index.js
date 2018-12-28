@@ -4,6 +4,7 @@
 
 'use strict';
 
+import path from 'path';
 import config from '../config/environment';
 import Sequelize from 'sequelize';
 
@@ -14,8 +15,6 @@ var db = {
 
 // Insert models below
 db.Doc = db.sequelize.import('../api/doc/doc.model');
-db.User = db.sequelize.import('../api/user/user.model');
-db.User.hasMany(db.Doc);
-db.Doc.belongsTo(db.User);
+db.Upload = db.sequelize.import('../api/upload/upload.model');
 
 module.exports = db;

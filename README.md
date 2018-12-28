@@ -7,9 +7,12 @@ This project was generated with the [Angular Full-Stack Generator](https://githu
 ### Prerequisites
 
 - [Git](https://git-scm.com/)
-- [Node.js and npm](nodejs.org) Node >= 4.x.x, npm >= 2.x.x
+- [Node.js and npm](nodejs.org) Node v6.2.2
 - [Gulp](http://gulpjs.com/) (`npm install --global gulp`)
 - [SQLite](https://www.sqlite.org/quickstart.html)
+- SVN CLI
+- Visual Studio 2015
+- Python 2.7
 
 ### Developing
 

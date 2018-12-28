@@ -19,16 +19,16 @@ var events = {
 };
 
 // Register the event emitter to the model events
-function registerEvents(doc) {
+function registerEvents(Doc) {
   for(var e in events) {
     let event = events[e];
-    doc.hook(e, emitEvent(event));
+    Doc.hook(e, emitEvent(event));
   }
 }
 
 function emitEvent(event) {
   return function(doc, options, done) {
-    DocEvents.emit(`${event} :${doc.id}`, doc);
+    DocEvents.emit(event + ':' + doc._id, doc);
     DocEvents.emit(event, doc);
     done(null);
   };

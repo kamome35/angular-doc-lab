@@ -1,15 +1,15 @@
 /**
- * User model events
+ * Upload model events
  */
 
 'use strict';
 
 import {EventEmitter} from 'events';
-import {User} from '../../sqldb';
-var UserEvents = new EventEmitter();
+var Upload = require('../../sqldb').Upload;
+var UploadEvents = new EventEmitter();
 
 // Set max event listeners (0 == unlimited)
-UserEvents.setMaxListeners(0);
+UploadEvents.setMaxListeners(0);
 
 // Model events
 var events = {
@@ -19,20 +19,20 @@ var events = {
 };
 
 // Register the event emitter to the model events
-function registerEvents(user) {
+function registerEvents(Upload) {
   for(var e in events) {
     let event = events[e];
-    user.hook(e, emitEvent(event));
+    Upload.hook(e, emitEvent(event));
   }
 }
 
 function emitEvent(event) {
   return function(doc, options, done) {
-    UserEvents.emit(`${event}:${doc.id}`, doc);
-    UserEvents.emit(event, doc);
+    UploadEvents.emit(event + ':' + doc._id, doc);
+    UploadEvents.emit(event, doc);
     done(null);
   };
 }
 
-registerEvents(User);
-export default UserEvents;
+registerEvents(Upload);
+export default UploadEvents;

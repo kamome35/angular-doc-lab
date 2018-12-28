@@ -8,12 +8,12 @@ import request from 'supertest';
 var newDoc;
 
 describe('Doc API:', function() {
-  describe('GET /api/docs', function() {
+  describe('GET /api/doc', function() {
     var docs;
 
     beforeEach(function(done) {
       request(app)
-        .get('/api/docs')
+        .get('/api/doc')
         .expect(200)
         .expect('Content-Type', /json/)
         .end((err, res) => {
@@ -30,13 +30,13 @@ describe('Doc API:', function() {
     });
   });
 
-  describe('POST /api/docs', function() {
+  describe('POST /api/doc', function() {
     beforeEach(function(done) {
       request(app)
-        .post('/api/docs')
+        .post('/api/doc')
         .send({
           name: 'New Doc',
-          dir: 'This is the brand new doc!!!'
+          info: 'This is the brand new doc!!!'
         })
         .expect(201)
         .expect('Content-Type', /json/)
@@ -51,19 +51,46 @@ describe('Doc API:', function() {
 
     it('should respond with the newly created doc', function() {
       expect(newDoc.name).to.equal('New Doc');
-      expect(newDoc.dir).to.equal('This is the brand new doc!!!');
+      expect(newDoc.info).to.equal('This is the brand new doc!!!');
     });
   });
 
-  describe('PUT /api/docs/:id', function() {
+  describe('GET /api/doc/:id', function() {
+    var doc;
+
+    beforeEach(function(done) {
+      request(app)
+        .get(`/api/doc/${newDoc._id}`)
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .end((err, res) => {
+          if(err) {
+            return done(err);
+          }
+          doc = res.body;
+          done();
+        });
+    });
+
+    afterEach(function() {
+      doc = {};
+    });
+
+    it('should respond with the requested doc', function() {
+      expect(doc.name).to.equal('New Doc');
+      expect(doc.info).to.equal('This is the brand new doc!!!');
+    });
+  });
+
+  describe('PUT /api/doc/:id', function() {
     var updatedDoc;
 
     beforeEach(function(done) {
       request(app)
-        .put(`/api/docs/${newDoc.id}`)
+        .put(`/api/doc/${newDoc._id}`)
         .send({
           name: 'Updated Doc',
-          dir: 'This is the updated doc!!!'
+          info: 'This is the updated doc!!!'
         })
         .expect(200)
         .expect('Content-Type', /json/)
@@ -82,12 +109,12 @@ describe('Doc API:', function() {
 
     it('should respond with the updated doc', function() {
       expect(updatedDoc.name).to.equal('Updated Doc');
-      expect(updatedDoc.dir).to.equal('This is the updated doc!!!');
+      expect(updatedDoc.info).to.equal('This is the updated doc!!!');
     });
 
     it('should respond with the updated doc on a subsequent GET', function(done) {
       request(app)
-        .get(`/api/docs/${newDoc.id}`)
+        .get(`/api/doc/${newDoc._id}`)
         .expect(200)
         .expect('Content-Type', /json/)
         .end((err, res) => {
@@ -97,17 +124,48 @@ describe('Doc API:', function() {
           let doc = res.body;
 
           expect(doc.name).to.equal('Updated Doc');
-          expect(doc.dir).to.equal('This is the updated doc!!!');
+          expect(doc.info).to.equal('This is the updated doc!!!');
 
           done();
         });
     });
   });
 
-  describe('DELETE /api/docs/:id', function() {
+  describe('PATCH /api/doc/:id', function() {
+    var patchedDoc;
+
+    beforeEach(function(done) {
+      request(app)
+        .patch(`/api/doc/${newDoc._id}`)
+        .send([
+          { op: 'replace', path: '/name', value: 'Patched Doc' },
+          { op: 'replace', path: '/info', value: 'This is the patched doc!!!' }
+        ])
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .end(function(err, res) {
+          if(err) {
+            return done(err);
+          }
+          patchedDoc = res.body;
+          done();
+        });
+    });
+
+    afterEach(function() {
+      patchedDoc = {};
+    });
+
+    it('should respond with the patched doc', function() {
+      expect(patchedDoc.name).to.equal('Patched Doc');
+      expect(patchedDoc.info).to.equal('This is the patched doc!!!');
+    });
+  });
+
+  describe('DELETE /api/doc/:id', function() {
     it('should respond with 204 on successful removal', function(done) {
       request(app)
-        .delete(`/api/docs/${newDoc.id}`)
+        .delete(`/api/doc/${newDoc._id}`)
         .expect(204)
         .end(err => {
           if(err) {
@@ -119,7 +177,7 @@ describe('Doc API:', function() {
 
     it('should respond with 404 when doc does not exist', function(done) {
       request(app)
-        .delete(`/api/docs/${newDoc.id}`)
+        .delete(`/api/doc/${newDoc._id}`)
         .expect(404)
         .end(err => {
           if(err) {
