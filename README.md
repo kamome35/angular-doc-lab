@@ -1,4 +1,4 @@
-# angular-doc-lab
+# Document Version Manager
 
 ## Demo
 
