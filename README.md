@@ -3,13 +3,13 @@
 ## Demo
 
 - Upload
-  ![video8](https://user-images.githubusercontent.com/42742556/50519608-25492680-0aff-11e9-90b3-840c4e1c4b6a.gif)
+  ![upload](https://kyoronet.github.io/image-storage/angular-doc-lab/upload.gif)
 
 - Create Folder
-  ![video10](https://user-images.githubusercontent.com/42742556/50519614-28441700-0aff-11e9-8ee6-7a8d7fe5dfb8.gif)
+  ![create_folder](https://kyoronet.github.io/image-storage/angular-doc-lab/create_folder.gif)
 
 - Tree
-  ![video9](https://user-images.githubusercontent.com/42742556/50519613-28441700-0aff-11e9-885f-dc1a86b6d447.gif)
+  ![tree](https://kyoronet.github.io/image-storage/angular-doc-lab/tree.gif)
 
 ## Unimplemented
 
